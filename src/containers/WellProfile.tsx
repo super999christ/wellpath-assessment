@@ -1,9 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
 
-import { dummyWellPad, dummyWellProfile } from "../data/wellPath";
+import { dummyWellPad, dummyWellProfile, loadDatafromCSV } from "../data/wellPath";
 
 function WellPath(props: {path: any, wellpad: [number, number, number]}) {
   const { path } = props;
@@ -102,6 +102,7 @@ function WellProfile() {
     wellName: "Dummy Well"
   }
   const camera = useRef();
+  const fileInputRef = useRef<HTMLInputElement>();
 
   // reference for total well depth to use in scene setup
   const wellTD = data.wellPath.at(-1)?.[2] || 500
@@ -110,9 +111,19 @@ function WellProfile() {
   // orientate axis with +Z up
   THREE.Object3D.DefaultUp.set(0, 0, 1);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files)
+      loadDatafromCSV(e.target.files[0]);
+  }
+
   return (
     <>
       <div>
+        <input 
+          type="file"
+          onChange={ handleChange } 
+          accept=".csv" 
+        />
         {data ? (
           <Canvas
             className="wellprofile-canvas"
