@@ -7,41 +7,6 @@ import { OrbitControls } from "@react-three/drei";
 
 import { dummyWellPad, dummyWellProfile } from "../data/wellPath";
 
-function WellPath(props: {path: any, wellpad: [number, number, number]}) {
-  const { path } = props;
-  console.log("path", path);
-
-  const mesh = useRef();
-  const tubeRef = useRef();
-
-  const [curve] = useState(() => {
-    // Create an empty array to stores the points
-    let points = [];
-
-    // Define points along Z axis
-    for (const point of path) {
-      points.push(
-        new THREE.Vector3(
-          point[0] + props.wellpad[0],
-          point[1] + props.wellpad[1],
-          -point[2] + props.wellpad[2] // vertical depth +ve but in scene needs to be -ve on Z,
-        )
-      );
-    }
-
-    return new THREE.CatmullRomCurve3(points);
-  });
-
-  return (
-    <mesh {...props} ref={mesh} scale={1}>
-      {/* {geometry} */}
-      <tubeGeometry ref={tubeRef} args={[curve, path.length, 5, 10, false]} />
-
-      <meshBasicMaterial />
-    </mesh>
-  );
-}
-
 function convertDegreeToRadian(deg: number) {
   return deg / 360 * Math.PI;
 }
@@ -57,6 +22,63 @@ function exampleLineCalc(dataPoint: [number, number, number, number]) {
                     ];  
   const calcedVector = new THREE.Vector3(...calcedPos);
   return calcedVector;
+}
+
+function WellPath(props: {path: any, wellpad: [number, number, number]}) {
+  const { path } = props;
+  console.log("path", path);
+
+  const mesh = useRef();
+  const tubeRef = useRef();
+
+  // const [curve] = useState(() => {
+  //   // Create an empty array to stores the points
+  //   let points = [];
+
+  //   // Define points along Z axis
+  //   for (const point of path) {
+  //     points.push(
+  //       new THREE.Vector3(
+  //         point[0] + props.wellpad[0],
+  //         point[1] + props.wellpad[1],
+  //         -point[2] + props.wellpad[2] // vertical depth +ve but in scene needs to be -ve on Z,
+  //       )
+  //     );
+  //   }
+
+  //   console.log(points);
+
+  //   return new THREE.CatmullRomCurve3(points);
+  // });
+
+  let points: Array<THREE.Vector3> = [];
+  try {
+    for(let i = 1; i < path.length; i ++) {
+      const calcedPos = exampleLineCalc(path[i]);
+      points.push(calcedPos);
+    }
+  } catch(err) {
+    console.log(err);
+  }
+  
+  // path.forEach((point: [number, number, number, number]) => {
+  //   points.push(new THREE.Vector3(
+  //     Number(point[0]) ,
+  //     Number(point[1]) ,
+  //     Number(-point[2])  // vertical depth +ve but in scene needs to be -ve on Z,
+  //   ));
+  // });
+
+  const curve = new THREE.CatmullRomCurve3(points);
+
+  return (
+    <mesh {...props} ref={mesh} scale={1}>
+      {/* {geometry} */}
+      <tubeGeometry ref={tubeRef} args={[curve, points.length, 5, 10, false]} />
+
+      <meshBasicMaterial />
+    </mesh>
+  );
 }
 
 function LineGraph(props: {wellpad: [number, number, number], path: [number, number, number][]}) {
@@ -138,7 +160,8 @@ function WellProfile() {
         const tmpAry: [number, number, number, number][] = [];
         const csv = Papa.parse(String(target?.result)).data as Array<Array<any>>;
         for ( let i = 1; i < csv.length; i ++ ) {
-          tmpAry.push([csv[i][0], csv[i][1], csv[i][2], csv[i][3]]);
+          if(csv[i][0] && csv[i][1] && csv[i][2] && csv[i][3])
+            tmpAry.push([csv[i][0], csv[i][1], csv[i][2], csv[i][3]]);
         }
         setData({
           ...data, 
@@ -179,7 +202,7 @@ function WellProfile() {
             />
             <OrbitControls enablePan={true} />
 
-            {/* <WellPath path={data.wellPath} wellpad={data.wellPad} /> */}
+            <WellPath path={[...data.wellPath]} wellpad={data.wellPad} />
             <LineGraph path={data.wellPath.map((point) => [point[0], point[1], point[2]])} wellpad={data.wellPad} />
           </Canvas>
         ) : (
