@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import Papa from 'papaparse';
 import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
 
-import { dummyWellPad, dummyWellProfile, loadDatafromCSV } from "../data/wellPath";
+
+import { dummyWellPad, dummyWellProfile } from "../data/wellPath";
 
 function WellPath(props: {path: any, wellpad: [number, number, number]}) {
   const { path } = props;
@@ -40,10 +42,19 @@ function WellPath(props: {path: any, wellpad: [number, number, number]}) {
   );
 }
 
+function convertDegreeToRadian(deg: number) {
+  return deg / 360 * Math.PI;
+}
+
 function exampleLineCalc(dataPoint: [number, number, number, number]) {
   // illustrates changing the line plot in threejs render loop
   const [x, y, z, density] = dataPoint;
-  const calcedPos = [x, y + Math.random() * 10 + density * 20, -z]; // randomly create a new point
+  // const calcedPos = [x * Math.cos(b) * Math.cos(c), y + Math.random() * 10 + density * 20, -z]; // randomly create a new point
+  const calcedPos = [
+                      x * Math.tan(convertDegreeToRadian(y)) * Math.cos(convertDegreeToRadian(z)), 
+                      x * Math.tan(convertDegreeToRadian(y)) * Math.sin(convertDegreeToRadian(z)), 
+                      -x
+                    ];  
   const calcedVector = new THREE.Vector3(...calcedPos);
   return calcedVector;
 }
@@ -66,6 +77,7 @@ function LineGraph(props: {wellpad: [number, number, number], path: [number, num
 
   // this initialises a line in the scene
   var points = props.path.map((point: any) => exampleLineCalc(point));
+  // points = points.slice(0, 0);
   console.log("points", points);
   const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
 
@@ -96,24 +108,48 @@ function LineGraph(props: {wellpad: [number, number, number], path: [number, num
 function WellProfile() {
 
   // Some dummy data for the well. This should be replaced with real data from the csv.
-  const data = {
+  const [data, setData] = useState({
     wellPad: dummyWellPad,
     wellPath: dummyWellProfile,
     wellName: "Dummy Well"
-  }
+  });
   const camera = useRef();
   const fileInputRef = useRef<HTMLInputElement>();
 
   // reference for total well depth to use in scene setup
   const wellTD = data.wellPath.at(-1)?.[2] || 500
 
-
   // orientate axis with +Z up
   THREE.Object3D.DefaultUp.set(0, 0, 1);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if(e.target.files)
-      loadDatafromCSV(e.target.files[0]);
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files) {
+      await loadDatafromCSV(e.target.files[0]);
+    }
+  }
+
+  const loadDatafromCSV = async ( file: File ) => {
+    //  Load Data
+    const fileReader = new FileReader();
+  
+    //  Event Listener
+    fileReader.onload = async ({ target }) => {
+      try {
+        const tmpAry: [number, number, number, number][] = [];
+        const csv = Papa.parse(String(target?.result)).data as Array<Array<any>>;
+        for ( let i = 1; i < csv.length; i ++ ) {
+          tmpAry.push([csv[i][0], csv[i][1], csv[i][2], csv[i][3]]);
+        }
+        setData({
+          ...data, 
+          wellPath: tmpAry, 
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    } 
+    
+    fileReader.readAsText(file);
   }
 
   return (
@@ -143,7 +179,7 @@ function WellProfile() {
             />
             <OrbitControls enablePan={true} />
 
-            <WellPath path={data.wellPath} wellpad={data.wellPad} />
+            {/* <WellPath path={data.wellPath} wellpad={data.wellPad} /> */}
             <LineGraph path={data.wellPath.map((point) => [point[0], point[1], point[2]])} wellpad={data.wellPad} />
           </Canvas>
         ) : (
