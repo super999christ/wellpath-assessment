@@ -26,30 +26,9 @@ function exampleLineCalc(dataPoint: [number, number, number, number]) {
 
 function WellPath(props: {path: any, wellpad: [number, number, number]}) {
   const { path } = props;
-  console.log("path", path);
 
   const mesh = useRef();
   const tubeRef = useRef();
-
-  // const [curve] = useState(() => {
-  //   // Create an empty array to stores the points
-  //   let points = [];
-
-  //   // Define points along Z axis
-  //   for (const point of path) {
-  //     points.push(
-  //       new THREE.Vector3(
-  //         point[0] + props.wellpad[0],
-  //         point[1] + props.wellpad[1],
-  //         -point[2] + props.wellpad[2] // vertical depth +ve but in scene needs to be -ve on Z,
-  //       )
-  //     );
-  //   }
-
-  //   console.log(points);
-
-  //   return new THREE.CatmullRomCurve3(points);
-  // });
 
   let points: Array<THREE.Vector3> = [];
   try {
@@ -99,8 +78,6 @@ function LineGraph(props: {wellpad: [number, number, number], path: [number, num
 
   // this initialises a line in the scene
   var points = props.path.map((point: any) => exampleLineCalc(point));
-  // points = points.slice(0, 0);
-  console.log("points", points);
   const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
 
   // this allows us to change the line on each render frame.
