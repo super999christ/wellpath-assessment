@@ -1,0 +1,32 @@
+@import "node_modules/bootstrap/scss/bootstrap";
+@import "account";
+
+$dark: #151719;
+$light: #e9ecef;
+
+.App {
+  text-align: center;
+  scroll-behavior: smooth;
+}
+
+.site-content {
+  min-height: 100vh;
+}
+
+.custom-nav {
+  background-color: $dark;
+}
+
+.custom-footer {
+  background-color: $dark;
+  color: $light;
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px 0px;
+}
+
+.wellprofile-canvas {
+  background: #252525;
+  min-height: 100vh;
+  width: 100%;
+}
